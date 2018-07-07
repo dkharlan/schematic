@@ -1,0 +1,6 @@
+[package]
+name = "schematic"
+version = "0.1.0"
+authors = ["dkharlan"]
+
+[dependencies]
