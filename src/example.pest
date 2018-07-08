@@ -1,0 +1,9 @@
+whitespace = _{ " " | "\n" }
+
+alpha = { 'a'..'z' | 'A'..'Z' }
+digit = { '0'..'9' }
+
+number = @{ digit+ }
+identifier = @{ alpha ~ (alpha | digit)* }
+
+thing = _{ (number | identifier)+ }
