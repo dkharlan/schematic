@@ -3,7 +3,8 @@ whitespace = _{ " " | "\n" }
 alpha = { 'a'..'z' | 'A'..'Z' }
 digit = { '0'..'9' }
 
-number = @{ digit+ }
+boolean = { "true" | "false" }
+integer = @{ digit+ }
 identifier = @{ alpha ~ (alpha | digit)* }
 
-thing = _{ (number | identifier)+ }
+thing = _{ (boolean | integer | identifier)+ }
