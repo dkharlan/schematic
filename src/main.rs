@@ -11,9 +11,14 @@ struct ExampleParser;
 
 fn main() {
 
-    //let input = "1 a 4b b1 one true false 123 123234234234234234234234235436 -10 \"foo\"";     // errors?
-    let input = "1 a 4 b1 one true false 123 123234234234234234234234235436 -10 \"foo\"";      // works
-    //let input = "1 a 4 b1 one true false 123 123234234234234234234234235436 -10 \"foo\"";      // errors
+    // TODO write tests
+    //   first input should error out since all atoms weren't parsed
+    //   second one works fine
+    //   third one should allow spaces in string (but doesn't)
+
+    //let input = "1 a 4b b1 one true false 123 123234234234234234234234235436 -10 \"foo\"";
+    let input = "1 a 4 b1 one true false 123 123234234234234234234234235436 -10 \"foo\"";
+    //let input = "1 a 4 b1 one true false 123 123234234234234234234234235436 -10 \"foo  \"";
 
     let pairs = ExampleParser::parse(Rule::things, input)
         .unwrap_or_else(|e| panic!("{}", e));
