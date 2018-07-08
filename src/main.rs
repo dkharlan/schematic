@@ -11,7 +11,7 @@ struct ExampleParser;
 
 fn main() {
 
-    let input  = "one true false 123";
+    let input  = "one true false 123 123234234234234234234234235436 -10";
 
     let pairs = ExampleParser::parse(Rule::thing, input)
         .unwrap_or_else(|e| panic!("{}", e));

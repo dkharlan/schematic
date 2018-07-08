@@ -4,7 +4,7 @@ alpha = { 'a'..'z' | 'A'..'Z' }
 digit = { '0'..'9' }
 
 boolean = { "true" | "false" }
-integer = @{ digit+ }
+integer = @{ "-"? ~ digit+ }
 identifier = @{ alpha ~ (alpha | digit)* }
 
 thing = _{ (boolean | integer | identifier)+ }
