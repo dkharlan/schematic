@@ -2,9 +2,15 @@ whitespace = _{ " " | "\n" }
 
 alpha = { 'a'..'z' | 'A'..'Z' }
 digit = { '0'..'9' }
+string_delimiter = { "\"" }
+list_delimiter = { "(" | ")" }
+non_delimiter_character = { !(string_delimiter | list_delimiter | whitespace) ~ any }
 
 boolean = { "true" | "false" }
 integer = @{ "-"? ~ digit+ }
-identifier = @{ alpha ~ (alpha | digit)* }
+identifier = @{ !digit ~ non_delimiter_character+ }
+string = @{ string_delimiter ~ non_delimiter_character* ~ string_delimiter }
 
-thing = _{ (boolean | integer | identifier)+ }
+things = _{ (boolean | integer | identifier | string )+ }
+
+main = _{ soi ~ things ~ eoi }

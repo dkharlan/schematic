@@ -11,14 +11,21 @@ struct ExampleParser;
 
 fn main() {
 
-    let input  = "one true false 123 123234234234234234234234235436 -10";
+    //println!("check 1");
 
-    let pairs = ExampleParser::parse(Rule::thing, input)
+    let input  = "one true false 123 123234234234234234234234235436 -10 \"foo\"";
+    //let input = "one";
+
+    //println!("check 2");
+
+    let pairs = ExampleParser::parse(Rule::main, input)
         .unwrap_or_else(|e| panic!("{}", e));
+
+    //println!("check 3");
 
     for pair in pairs {
         let span = pair.clone().into_span();
-        //println!("{:?} => {:?}", pair.as_rule(), span.as_str());
+        //println!("checking span {:?} => {:?}", pair.as_rule(), span.as_str());
         let token_str = span.as_str();
         match pair.as_rule() {
             Rule::identifier => println!("ident = {:?}", token_str),
@@ -31,7 +38,18 @@ fn main() {
                 "false" => println!("boolean = {}", false),
                 _ => unreachable!()
             },
+            Rule::string => println!("string = {}", token_str),
             _ => println!("UNKNOWN pattern = {}", token_str)
         }
     }
+
+    //println!("check 4");
+
+    //let string_literal_pairs = ExampleParser::parse(Rule::string, "\"foobar\"").unwrap_or_else(|e| panic!("{}", e));
+    //println!("{:?}", string_literal_pairs);
+
+    //let stuff = ExampleParser::parse(Rule::main, "\"foobar\"").unwrap_or_else(|e| panic!("{}", e));
+    //println!("{:?}", stuff);
+
+    //println!("check 5");
 }
