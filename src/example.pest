@@ -4,12 +4,13 @@ alpha = { 'a'..'z' | 'A'..'Z' }
 digit = { '0'..'9' }
 string_delimiter = { "\"" }
 list_delimiter = { "(" | ")" }
+string_character = { !string_delimiter ~ any }
 non_delimiter_character = { !(string_delimiter | list_delimiter | white_space) ~ any }
 
 boolean = @{ "true" | "false" }
 integer = @{ "-"? ~ digit+ }
 identifier = @{ !digit ~ non_delimiter_character+ }
-string = @{ string_delimiter ~ non_delimiter_character* ~ string_delimiter }
+string = @{ string_delimiter ~ string_character* ~ string_delimiter }
 
 atom = _{ (boolean | integer | identifier | string) }
 
