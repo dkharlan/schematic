@@ -19,8 +19,13 @@ fn main() {
     //let input = "1 a 4 b1 one true false 123 123234234234234234234234235436 -10 \"foo\"";
     //let input = "1 a 5 b1 one true false 123 123234234234234234234234235436 -10 \"foo  \"";
 
-    let input = "(foo bar 3)";
+    //let input = "(foo bar 3)";
     //let input = "1234";
+    let input = r#"
+    (foo
+      (bar 2)
+      3)
+    "#;
 
     let pairs = ExampleParser::parse(Rule::expression, input)
         .unwrap_or_else(|e| panic!("{}", e));
