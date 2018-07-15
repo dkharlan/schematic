@@ -57,5 +57,8 @@ pub enum Value {
     Cell(Box<Value>, Box<Value>)
 }
 
-
-
+impl Into<Value> for Atom {
+    fn into(self) -> Value {
+        Value::Atom(self)
+    }
+}
