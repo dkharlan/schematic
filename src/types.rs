@@ -51,14 +51,26 @@ impl Into<Atom> for Boolean {
 }
 
 #[derive(Debug)]
+pub struct Cell {
+    left: Box<Value>,
+    right: Box<Value>
+}
+
+#[derive(Debug)]
 pub enum Value {
     Nil,
     Atom(Atom),
-    Cell(Box<Value>, Box<Value>)
+    Cell(Cell)
 }
 
 impl Into<Value> for Atom {
     fn into(self) -> Value {
         Value::Atom(self)
+    }
+}
+
+impl Into<Value> for Cell {
+    fn into(self) -> Value {
+        Value::Cell(self)
     }
 }

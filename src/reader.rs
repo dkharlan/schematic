@@ -1,9 +1,10 @@
 use std::convert::TryFrom;
 
 use pest::Parser;
+use pest::iterators::Pairs;
 
 use errors;
-use types::{Value, Atom, Symbol, Fixnum, Str, Boolean};
+use types::{Value, Atom, Cell, Symbol, Fixnum, Str, Boolean};
 
 #[derive(Parser)]
 #[grammar = "example.pest"]
@@ -52,6 +53,17 @@ impl TryFrom<String> for Boolean {
     }
 }
 
+impl<'i> TryFrom<Pairs<'i, Rule>> for Cell {
+    type Error = errors::Error;
+
+    fn try_from(pairs: Pairs<'i, Rule>) -> Result<Self, Self::Error> {
+        for pair in pairs {
+            println!(" DEBUG: element = {:?}", pair);
+        }
+        Err(errors::Error::UnimplementedParserOperation)
+    }
+}
+
 pub fn read(input: &str) -> Result<Value, errors::Error> {
     let mut pairs = ExampleParser::parse(Rule::expression, &input)
         .unwrap_or_else(|e| panic!("{}", e));
@@ -68,6 +80,8 @@ pub fn read(input: &str) -> Result<Value, errors::Error> {
         Some(pair) => {
             let span = pair.clone().into_span();
             let token_string = span.as_str().to_string();
+
+            // TODO try to find a way to reduce boilerplate / intermediate assignments
             match pair.as_rule() {
                 Rule::symbol => {
                     let symbol: Atom = Symbol::from(token_string).into();
@@ -85,6 +99,10 @@ pub fn read(input: &str) -> Result<Value, errors::Error> {
                     let str: Atom = Str::from(token_string).into();
                     Ok(str.into())
                 },
+                Rule::list => {
+                    let cell_opt = Cell::try_from(pair.into_inner());
+                    cell_opt.map(|c: Cell| c.into())
+                },
                 _ => Err(errors::Error::UnknownToken)
             }
         },
@@ -92,11 +110,4 @@ pub fn read(input: &str) -> Result<Value, errors::Error> {
             Err(errors::Error::EmptyValues)
         }
     }
-
-    //Rule::list => {
-        //    println!("list = {}", token_str);
-        //    for thing in pair.into_inner() {
-        //        println!("thing = {:?}", thing);
-        //    }
-        //},
 }
