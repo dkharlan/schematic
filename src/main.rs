@@ -19,8 +19,8 @@ fn main() {
     //let input = "1 a 4 b1 one true false 123 123234234234234234234234235436 -10 \"foo\"";
     //let input = "1 a 5 b1 one true false 123 123234234234234234234234235436 -10 \"foo  \"";
 
-    //let input = "(foo bar 2)";
-    let input = "1234";
+    let input = "(foo bar 3)";
+    //let input = "1234";
 
     let pairs = ExampleParser::parse(Rule::expression, input)
         .unwrap_or_else(|e| panic!("{}", e));
@@ -29,7 +29,7 @@ fn main() {
         let span = pair.clone().into_span();
         let token_str = span.as_str();
         match pair.as_rule() {
-            Rule::identifier => println!("ident = {:?}", token_str),
+            Rule::symbol => println!("symbol = {:?}", token_str),
             Rule::integer => match token_str.parse::<i64>() {
                 Ok(i) => println!("integer = {}", i),
                 Err(_) => println!("larger than i64 not yet supported (input was {:?})", token_str)
@@ -40,7 +40,12 @@ fn main() {
                 _ => unreachable!()
             },
             Rule::string => println!("string = {}", token_str),
-            Rule::list => println!("list = {}", token_str),
+            Rule::list => {
+                println!("list = {}", token_str);
+                for thing in pair.into_inner() {
+                    println!("thing = {:?}", thing);
+                }
+            },
             _ => println!("UNKNOWN pattern = {}", token_str)   // TODO change to unreachable!() ?
         }
     }

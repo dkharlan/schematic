@@ -3,8 +3,8 @@ white_space = _{ " " | "\n" }
 alpha = { 'a'..'z' | 'A'..'Z' }
 digit = { '0'..'9' }
 string_delimiter = { "\"" }
-list_begin_delimiter = { "(" }
-list_end_delimiter = { ")" }
+list_begin_delimiter = _{ "(" }
+list_end_delimiter = _{ ")" }
 list_delimiter = { list_begin_delimiter | list_end_delimiter }
 
 string_character = { !string_delimiter ~ any }
@@ -12,9 +12,9 @@ non_delimiter_character = { !(string_delimiter | list_delimiter | white_space) ~
 
 boolean = @{ "true" | "false" }
 integer = @{ "-"? ~ digit+ }
-identifier = @{ !digit ~ non_delimiter_character+ }
+symbol = @{ !digit ~ non_delimiter_character+ }
 string = @{ string_delimiter ~ string_character* ~ string_delimiter }
 
-atom = _{ (boolean | integer | identifier | string) }
+atom = _{ (boolean | integer | symbol | string) }
 expression = _{ white_space* ~ (atom | list) ~ white_space* }
 list = { list_begin_delimiter ~ white_space* ~ expression+ ~ white_space* ~ list_end_delimiter }
