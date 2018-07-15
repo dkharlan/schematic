@@ -12,7 +12,7 @@ mod types;
 use std::io;
 use std::io::{BufRead, Write};
 
-use reader::parse;
+use reader::read;
 
 fn main() {
 
@@ -34,7 +34,16 @@ fn main() {
 
         println!(" DEBUG: raw input = {}", line);
 
-        parse(&line);
+        let value = read(&line);
+
+        match value {
+            Ok(val) => {
+                println!(" ==> {:?}", val);
+            },
+            Err(e) => {
+                println!(" ERROR: {:?}", e);
+            }
+        };
     }
 
     // TODO print pithy quote

@@ -2,5 +2,6 @@
 pub enum Error {
     FixnumParsing,
     BooleanParsing,
-    UnknownToken
+    UnknownToken,
+    EmptyValues
 }

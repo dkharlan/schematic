@@ -3,7 +3,7 @@ use std::convert::TryFrom;
 use pest::Parser;
 
 use errors;
-use types::{Atom, Symbol, Fixnum, Str, Boolean};
+use types::{Value, Atom, Symbol, Fixnum, Str, Boolean};
 
 #[derive(Parser)]
 #[grammar = "example.pest"]
@@ -52,37 +52,51 @@ impl TryFrom<String> for Boolean {
     }
 }
 
-pub fn parse(input: &str) {
-    let pairs = ExampleParser::parse(Rule::expression, &input)
+pub fn read(input: &str) -> Result<Value, errors::Error> {
+    let mut pairs = ExampleParser::parse(Rule::expression, &input)
         .unwrap_or_else(|e| panic!("{}", e));
 
-    // FIXME? should only be one pair?
-    for pair in pairs {
-        let span = pair.clone().into_span();
-        let token_string = span.as_str().to_string();
+    let first_pair = pairs.next();
+    let second_pair = pairs.next();
 
-        let atom: Result<Atom, errors::Error> = match pair.as_rule() {
-            Rule::symbol => Ok(Symbol::from(token_string).into()),
-            Rule::integer => Fixnum::try_from(token_string).map(|i| i.into()),
-            Rule::boolean => Boolean::try_from(token_string).map(|b| b.into()),
-            Rule::string => Ok(Str::from(token_string).into()),
-            _ => Err(errors::Error::UnknownToken)
-        };
-
-        match atom {
-            Ok(atom) => {
-                println!(" ==> {:?}", atom);
-            },
-            Err(e) => {
-                println!(" ERROR: {:?}", e);
-            }
-        };
-
-        //Rule::list => {
-            //    println!("list = {}", token_str);
-            //    for thing in pair.into_inner() {
-            //        println!("thing = {:?}", thing);
-            //    }
-            //},
+    // TODO handle multiple values
+    if let Some(_) = second_pair {
+        println!(" WARN: Multiple pairs from parser");
     }
+
+    match first_pair {
+        Some(pair) => {
+            let span = pair.clone().into_span();
+            let token_string = span.as_str().to_string();
+            match pair.as_rule() {
+                Rule::symbol => {
+                    let symbol: Atom = Symbol::from(token_string).into();
+                    Ok(symbol.into())
+                },
+                Rule::integer => {
+                    let fixnum_opt = Fixnum::try_from(token_string).map(|i| i.into());
+                    fixnum_opt.map(|a: Atom| a.into())
+                },
+                Rule::boolean => {
+                    let boolean_opt = Boolean::try_from(token_string).map(|b| b.into());
+                    boolean_opt.map(|a: Atom| a.into())
+                },
+                Rule::string => {
+                    let str: Atom = Str::from(token_string).into();
+                    Ok(str.into())
+                },
+                _ => Err(errors::Error::UnknownToken)
+            }
+        },
+        None => {
+            Err(errors::Error::EmptyValues)
+        }
+    }
+
+    //Rule::list => {
+        //    println!("list = {}", token_str);
+        //    for thing in pair.into_inner() {
+        //        println!("thing = {:?}", thing);
+        //    }
+        //},
 }
