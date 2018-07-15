@@ -5,14 +5,14 @@ extern crate pest;
 #[macro_use]
 extern crate pest_derive;
 
-mod parser;
+mod reader;
 mod errors;
 mod types;
 
 use std::io;
 use std::io::{BufRead, Write};
 
-use parser::parse;
+use reader::parse;
 
 fn main() {
 
