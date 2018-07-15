@@ -1,12 +1,17 @@
+#![feature(try_from)]
+
 extern crate pest;
 
 #[macro_use]
 extern crate pest_derive;
 
+mod parser;
+mod errors;
+mod types;
+
 use std::io;
 use std::io::{BufRead, Write};
 
-mod parser;
 use parser::parse;
 
 fn main() {
@@ -27,9 +32,7 @@ fn main() {
             None => break // EOF
         }
 
-        println!("DEBUG: raw input = {}", line);
-
-        println!();
+        println!(" DEBUG: raw input = {}", line);
 
         parse(&line);
     }
