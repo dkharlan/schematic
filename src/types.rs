@@ -52,25 +52,27 @@ impl Into<Atom> for Boolean {
 
 #[derive(Debug)]
 pub struct Cell {
-    left: Box<Value>,
-    right: Box<Value>
+    pub left: Value,
+    pub right: Value
 }
 
 #[derive(Debug)]
 pub enum Value {
     Nil,
-    Atom(Atom),
-    Cell(Cell)
+    Atom(Box<Atom>),
+    Cell(Box<Cell>)
 }
+
+// TODO need Into<Value> for Box<V> as well?
 
 impl Into<Value> for Atom {
     fn into(self) -> Value {
-        Value::Atom(self)
+        Value::Atom(Box::new(self))
     }
 }
 
 impl Into<Value> for Cell {
     fn into(self) -> Value {
-        Value::Cell(self)
+        Value::Cell(Box::new(self))
     }
 }

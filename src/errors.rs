@@ -4,5 +4,6 @@ pub enum Error {
     FixnumParsing,
     BooleanParsing,
     UnknownToken,
-    EmptyValues
+    EmptyValues,
+    AttemptToConsAtom
 }

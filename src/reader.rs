@@ -1,7 +1,7 @@
 use std::convert::TryFrom;
 
 use pest::Parser;
-use pest::iterators::Pairs;
+use pest::iterators::Pair;
 
 use errors;
 use types::{Value, Atom, Cell, Symbol, Fixnum, Str, Boolean};
@@ -53,14 +53,79 @@ impl TryFrom<String> for Boolean {
     }
 }
 
-impl<'i> TryFrom<Pairs<'i, Rule>> for Cell {
+impl<'i> TryFrom<Pair<'i, Rule>> for Value {
     type Error = errors::Error;
 
-    fn try_from(pairs: Pairs<'i, Rule>) -> Result<Self, Self::Error> {
-        for pair in pairs {
-            println!(" DEBUG: element = {:?}", pair);
+    fn try_from(pair: Pair<'i, Rule>) -> Result<Self, Self::Error> {
+
+        let rule = pair.as_rule();
+        let span = pair.clone().into_span();
+        let token_string = span.as_str().to_string();
+
+        match rule {
+            Rule::symbol => {
+                let symbol: Atom = Symbol::from(token_string).into();
+                Ok(symbol.into())
+            },
+            Rule::integer => {
+                let fixnum_opt = Fixnum::try_from(token_string).map(|i| i.into());
+                fixnum_opt.map(|a: Atom| a.into())
+            },
+            Rule::boolean => {
+                let boolean_opt = Boolean::try_from(token_string).map(|b| b.into());
+                boolean_opt.map(|a: Atom| a.into())
+            },
+            Rule::string => {
+                let str: Atom = Str::from(token_string).into();
+                Ok(str.into())
+            },
+            Rule::list => {
+
+                let mut head = Value::Nil;
+                let prev = &mut head;
+
+                let error;
+                for mut pair in pair.into_inner() {
+
+                    let current_value = match Value::try_from(pair) {
+                        Ok(value) => value,
+                        Err(e) => {
+                            error = Some(e);
+                            break
+                        }
+                    };
+
+                    let current_cell = Cell {
+                        left: current_value,
+                        right: Value::Nil
+                    };
+                    let mut current = Value::Cell(Box::new(current_cell));
+
+                    match *prev {
+                        Value::Nil => {
+                            *prev = current;
+                        },
+                        Value::Cell(cell) => {
+                            (*cell).right = current;
+                        },
+                        Value::Atom(_) => {
+                            error = Some(errors::Error::AttemptToConsAtom);
+                            break
+                        }
+                    }
+
+                    prev = &mut current;
+                }
+
+                if let Some(error) = error {
+                    Err(error)
+                }
+                else {
+                    Ok(head)
+                }
+            },
+            _ => Err(errors::Error::UnknownToken)
         }
-        Err(errors::Error::UnimplementedParserOperation)
     }
 }
 
@@ -77,37 +142,7 @@ pub fn read(input: &str) -> Result<Value, errors::Error> {
     }
 
     match first_pair {
-        Some(pair) => {
-            let span = pair.clone().into_span();
-            let token_string = span.as_str().to_string();
-
-            // TODO try to find a way to reduce boilerplate / intermediate assignments
-            match pair.as_rule() {
-                Rule::symbol => {
-                    let symbol: Atom = Symbol::from(token_string).into();
-                    Ok(symbol.into())
-                },
-                Rule::integer => {
-                    let fixnum_opt = Fixnum::try_from(token_string).map(|i| i.into());
-                    fixnum_opt.map(|a: Atom| a.into())
-                },
-                Rule::boolean => {
-                    let boolean_opt = Boolean::try_from(token_string).map(|b| b.into());
-                    boolean_opt.map(|a: Atom| a.into())
-                },
-                Rule::string => {
-                    let str: Atom = Str::from(token_string).into();
-                    Ok(str.into())
-                },
-                Rule::list => {
-                    let cell_opt = Cell::try_from(pair.into_inner());
-                    cell_opt.map(|c: Cell| c.into())
-                },
-                _ => Err(errors::Error::UnknownToken)
-            }
-        },
-        None => {
-            Err(errors::Error::EmptyValues)
-        }
+        Some(pair) => Value::try_from(pair),
+        None => Err(errors::Error::EmptyValues)
     }
 }
