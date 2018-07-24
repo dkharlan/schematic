@@ -90,8 +90,7 @@ impl<'i> TryFrom<Pair<'i, Rule>> for ValuePtr {
             },
             Rule::list => {
 
-                // TODO pull out to "new" method
-                let mut list = ValuePtr { obj: Value::Nil };
+                let mut reverse_list = ValuePtr::new();
                 let mut error = None;
 
                 for pair in pair.into_inner() {
@@ -107,16 +106,23 @@ impl<'i> TryFrom<Pair<'i, Rule>> for ValuePtr {
                     // TODO pull out to "push" / "cons" method
                     let current_cons = Box::new(Cons {
                         left: new_value_ptr.obj,
-                        right: mem::replace(&mut list.obj, Value::Nil)
+                        right: mem::replace(&mut reverse_list.obj, Value::Nil)
                     });
-                    list.obj = Value::Cons(current_cons);
+                    reverse_list.obj = Value::Cons(current_cons);
                 }
 
                 if let Some(error) = error {
                     Err(error)
                 }
                 else {
-                    Ok(list)
+                    let list = ValuePtr::new();
+                    while let Value::Cons(ref mut cell) = reverse_list.obj {
+                        // TODO step 1 -- pop old
+                        // TODO step 2 -- push new
+                    }
+
+                    //Ok(reverse_list)
+                    unreachable!()
                 }
             },
             _ => Err(errors::Error::UnknownToken)

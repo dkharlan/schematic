@@ -92,3 +92,11 @@ impl Into<ValuePtr> for Value {
         }
     }
 }
+
+impl ValuePtr {
+    pub fn new() -> Self {
+        ValuePtr {
+            obj: Value::Nil
+        }
+    }
+}
