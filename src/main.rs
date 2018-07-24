@@ -38,7 +38,7 @@ fn main() {
 
         match value {
             Ok(val) => {
-                println!(" ==> {:?}", val);
+                println!(" ==> {:#?}", val);
             },
             Err(e) => {
                 println!(" ERROR: {:?}", e);
