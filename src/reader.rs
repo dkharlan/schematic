@@ -90,18 +90,10 @@ impl<'i> TryFrom<Pair<'i, Rule>> for ValuePtr {
             },
             Rule::list => {
 
+                // TODO pull out to "new" method
                 let mut list = ValuePtr { obj: Value::Nil };
                 let mut error = None;
 
-                // FIXME hamfisted, but will work for now
-                // a less hamfisted but still not perfect way would
-                // be to read in reverse, then pop out into a "new" list
-                //let pairs = pair.into_inner()
-                //    .collect::<Vec<Pair<Rule>>>()
-                //    .iter()
-                //    .rev();
-
-                //for pair in pair.into_inner() {
                 for pair in pair.into_inner() {
 
                     let new_value_ptr = match ValuePtr::try_from(pair) {
@@ -112,12 +104,7 @@ impl<'i> TryFrom<Pair<'i, Rule>> for ValuePtr {
                         }
                     };
 
-                    //let current_cell = Cons {
-                    //    left: current_value,
-                    //    right: Value::Nil
-                    //};
-                    //*current = Value::Cell(Box::new(current_cell));
-
+                    // TODO pull out to "push" / "cons" method
                     let current_cons = Box::new(Cons {
                         left: new_value_ptr.obj,
                         right: mem::replace(&mut list.obj, Value::Nil)
