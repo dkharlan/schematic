@@ -95,6 +95,7 @@ impl Into<ValuePtr> for Value {
     }
 }
 
+// FIXME push and pop aren't part of the "protocol" of Value. they should be moved
 impl ValuePtr {
     pub fn new() -> Self {
         ValuePtr {
@@ -102,11 +103,28 @@ impl ValuePtr {
         }
     }
 
+    // FIXME should this take a ValuePtr?
     pub fn push(&mut self, value: Value) {
         let cons = Box::new(Cons {
             left: value,
             right: mem::replace(&mut self.obj, Value::Nil)
         });
         self.obj = Value::Cons(cons);
+    }
+
+    pub fn pop(&mut self) -> Option<ValuePtr> {
+        match mem::replace(&mut self.obj, Value::Nil) {
+            Value::Nil => None,
+            Value::Atom(_) => unimplemented!(),  // TODO what happens here?
+            Value::Cons(boxed_cons) => {
+                let cons = *boxed_cons;
+                self.obj = cons.right;
+
+                let mut ptr = ValuePtr::new();
+                ptr.obj = cons.left;
+
+                Some(ptr)
+            }
+        }
     }
 }

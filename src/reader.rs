@@ -107,14 +107,11 @@ impl<'i> TryFrom<Pair<'i, Rule>> for ValuePtr {
                     Err(error)
                 }
                 else {
-                    let list = ValuePtr::new();
-                    while let Value::Cons(ref mut cell) = reverse_list.obj {
-                        // TODO step 1 -- pop old
-                        // TODO step 2 -- push new
+                    let mut list = ValuePtr::new();
+                    while let Some(element) = reverse_list.pop() {
+                        list.push(element.obj);
                     }
-
-                    //Ok(reverse_list)
-                    unreachable!()
+                    Ok(list)
                 }
             },
             _ => Err(errors::Error::UnknownToken)
