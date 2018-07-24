@@ -1,11 +1,10 @@
-use std::mem;
 use std::convert::TryFrom;
 
 use pest::Parser;
 use pest::iterators::Pair;
 
 use errors;
-use types::{Value, ValuePtr, Atom, Cons, Symbol, Fixnum, Str, Boolean};
+use types::{Value, ValuePtr, Atom, Symbol, Fixnum, Str, Boolean};
 
 #[derive(Parser)]
 #[grammar = "example.pest"]
@@ -94,7 +93,6 @@ impl<'i> TryFrom<Pair<'i, Rule>> for ValuePtr {
                 let mut error = None;
 
                 for pair in pair.into_inner() {
-
                     let new_value_ptr = match ValuePtr::try_from(pair) {
                         Ok(value) => value,
                         Err(e) => {
@@ -102,13 +100,7 @@ impl<'i> TryFrom<Pair<'i, Rule>> for ValuePtr {
                             break
                         }
                     };
-
-                    // TODO pull out to "push" / "cons" method
-                    let current_cons = Box::new(Cons {
-                        left: new_value_ptr.obj,
-                        right: mem::replace(&mut reverse_list.obj, Value::Nil)
-                    });
-                    reverse_list.obj = Value::Cons(current_cons);
+                    reverse_list.push(new_value_ptr.obj);
                 }
 
                 if let Some(error) = error {

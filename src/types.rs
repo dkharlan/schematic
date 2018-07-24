@@ -1,3 +1,5 @@
+use std::mem;
+
 // FIXME this is pretty much all public for now
 // this will change once I settle on interfaces (both from the Rust and Lisp sides), at
 // which point I'll probably refactor quite a bit
@@ -98,5 +100,13 @@ impl ValuePtr {
         ValuePtr {
             obj: Value::Nil
         }
+    }
+
+    pub fn push(&mut self, value: Value) {
+        let cons = Box::new(Cons {
+            left: value,
+            right: mem::replace(&mut self.obj, Value::Nil)
+        });
+        self.obj = Value::Cons(cons);
     }
 }
