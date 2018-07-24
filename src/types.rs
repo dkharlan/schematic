@@ -1,3 +1,7 @@
+// FIXME this is pretty much all public for now
+// this will change once I settle on interfaces (both from the Rust and Lisp sides), at
+// which point I'll probably refactor quite a bit
+
 #[derive(Debug)]
 pub struct Symbol {
     pub value: String
@@ -50,8 +54,14 @@ impl Into<Atom> for Boolean {
     }
 }
 
+// so we can point to the heap from the stack
 #[derive(Debug)]
-pub struct Cell {
+pub struct ValuePtr {
+    pub obj: Value
+}
+
+#[derive(Debug)]
+pub struct Cons {
     pub left: Value,
     pub right: Value
 }
@@ -60,10 +70,8 @@ pub struct Cell {
 pub enum Value {
     Nil,
     Atom(Box<Atom>),
-    Cell(Box<Cell>)
+    Cons(Box<Cons>)
 }
-
-// TODO need Into<Value> for Box<V> as well?
 
 impl Into<Value> for Atom {
     fn into(self) -> Value {
@@ -71,8 +79,16 @@ impl Into<Value> for Atom {
     }
 }
 
-impl Into<Value> for Cell {
+impl Into<Value> for Cons {
     fn into(self) -> Value {
-        Value::Cell(Box::new(self))
+        Value::Cons(Box::new(self))
+    }
+}
+
+impl Into<ValuePtr> for Value {
+    fn into(self) -> ValuePtr {
+        ValuePtr {
+            obj: self
+        }
     }
 }

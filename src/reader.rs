@@ -1,10 +1,11 @@
+use std::mem;
 use std::convert::TryFrom;
 
 use pest::Parser;
 use pest::iterators::Pair;
 
 use errors;
-use types::{Value, Atom, Cell, Symbol, Fixnum, Str, Boolean};
+use types::{Value, ValuePtr, Atom, Cons, Symbol, Fixnum, Str, Boolean};
 
 #[derive(Parser)]
 #[grammar = "example.pest"]
@@ -81,13 +82,23 @@ impl<'i> TryFrom<Pair<'i, Rule>> for Value {
             },
             Rule::list => {
 
-                let mut head = Value::Nil;
-                let prev = &mut head;
+                let mut list = ValuePtr { obj: Value::Nil };
+                let mut error = None;
 
-                let error;
-                for mut pair in pair.into_inner() {
+                // FIXME hamfisted, but will work for now
+                // a less hamfisted but still not perfect way would
+                // be to read in reverse, then pop out into a "new" list
+                let pairs = pair.into_inner()
+                    .collect::<Vec<Pair<Rule>>>()
+                    .iter()
+                    .rev();
 
-                    let current_value = match Value::try_from(pair) {
+                //for pair in pair.into_inner() {
+                for pair_ref in pairs {
+
+                    let pair = *pair_ref;
+
+                    let new_value = match Value::try_from(pair) {
                         Ok(value) => value,
                         Err(e) => {
                             error = Some(e);
@@ -95,26 +106,17 @@ impl<'i> TryFrom<Pair<'i, Rule>> for Value {
                         }
                     };
 
-                    let current_cell = Cell {
-                        left: current_value,
-                        right: Value::Nil
-                    };
-                    let mut current = Value::Cell(Box::new(current_cell));
+                    //let current_cell = Cons {
+                    //    left: current_value,
+                    //    right: Value::Nil
+                    //};
+                    //*current = Value::Cell(Box::new(current_cell));
 
-                    match *prev {
-                        Value::Nil => {
-                            *prev = current;
-                        },
-                        Value::Cell(cell) => {
-                            (*cell).right = current;
-                        },
-                        Value::Atom(_) => {
-                            error = Some(errors::Error::AttemptToConsAtom);
-                            break
-                        }
-                    }
-
-                    prev = &mut current;
+                    let current_cons = Box::new(Cons {
+                        left: new_value,
+                        right: mem::replace(&mut list.obj, Value::Nil)
+                    });
+                    list.obj = Value::Cons(current_cons);
                 }
 
                 if let Some(error) = error {
