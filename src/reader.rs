@@ -54,7 +54,7 @@ impl TryFrom<String> for Boolean {
     }
 }
 
-impl<'i> TryFrom<Pair<'i, Rule>> for Value {
+impl<'i> TryFrom<Pair<'i, Rule>> for ValuePtr {
     type Error = errors::Error;
 
     fn try_from(pair: Pair<'i, Rule>) -> Result<Self, Self::Error> {
@@ -63,22 +63,30 @@ impl<'i> TryFrom<Pair<'i, Rule>> for Value {
         let span = pair.clone().into_span();
         let token_string = span.as_str().to_string();
 
+        // FIXME atomic types are constructed on the stack and then moved to the heap
+
         match rule {
             Rule::symbol => {
                 let symbol: Atom = Symbol::from(token_string).into();
-                Ok(symbol.into())
+                let symbol_value: Value = symbol.into();
+                Ok(symbol_value.into())
             },
             Rule::integer => {
-                let fixnum_opt = Fixnum::try_from(token_string).map(|i| i.into());
-                fixnum_opt.map(|a: Atom| a.into())
+                Fixnum::try_from(token_string)
+                    .map(|i| i.into())
+                    .map(|a: Atom| a.into())
+                    .map(|v: Value| v.into())
             },
             Rule::boolean => {
-                let boolean_opt = Boolean::try_from(token_string).map(|b| b.into());
-                boolean_opt.map(|a: Atom| a.into())
+                Boolean::try_from(token_string)
+                    .map(|b| b.into())
+                    .map(|a: Atom| a.into())
+                    .map(|v: Value| v.into())
             },
             Rule::string => {
-                let str: Atom = Str::from(token_string).into();
-                Ok(str.into())
+                let string: Atom = Str::from(token_string).into();
+                let string_value: Value = string.into();
+                Ok(string_value.into())
             },
             Rule::list => {
 
@@ -88,17 +96,15 @@ impl<'i> TryFrom<Pair<'i, Rule>> for Value {
                 // FIXME hamfisted, but will work for now
                 // a less hamfisted but still not perfect way would
                 // be to read in reverse, then pop out into a "new" list
-                let pairs = pair.into_inner()
-                    .collect::<Vec<Pair<Rule>>>()
-                    .iter()
-                    .rev();
+                //let pairs = pair.into_inner()
+                //    .collect::<Vec<Pair<Rule>>>()
+                //    .iter()
+                //    .rev();
 
                 //for pair in pair.into_inner() {
-                for pair_ref in pairs {
+                for pair in pair.into_inner() {
 
-                    let pair = *pair_ref;
-
-                    let new_value = match Value::try_from(pair) {
+                    let new_value_ptr = match ValuePtr::try_from(pair) {
                         Ok(value) => value,
                         Err(e) => {
                             error = Some(e);
@@ -113,7 +119,7 @@ impl<'i> TryFrom<Pair<'i, Rule>> for Value {
                     //*current = Value::Cell(Box::new(current_cell));
 
                     let current_cons = Box::new(Cons {
-                        left: new_value,
+                        left: new_value_ptr.obj,
                         right: mem::replace(&mut list.obj, Value::Nil)
                     });
                     list.obj = Value::Cons(current_cons);
@@ -123,7 +129,7 @@ impl<'i> TryFrom<Pair<'i, Rule>> for Value {
                     Err(error)
                 }
                 else {
-                    Ok(head)
+                    Ok(list)
                 }
             },
             _ => Err(errors::Error::UnknownToken)
@@ -131,7 +137,7 @@ impl<'i> TryFrom<Pair<'i, Rule>> for Value {
     }
 }
 
-pub fn read(input: &str) -> Result<Value, errors::Error> {
+pub fn read(input: &str) -> Result<ValuePtr, errors::Error> {
     let mut pairs = ExampleParser::parse(Rule::expression, &input)
         .unwrap_or_else(|e| panic!("{}", e));
 
@@ -144,7 +150,7 @@ pub fn read(input: &str) -> Result<Value, errors::Error> {
     }
 
     match first_pair {
-        Some(pair) => Value::try_from(pair),
+        Some(pair) => ValuePtr::try_from(pair),
         None => Err(errors::Error::EmptyValues)
     }
 }
