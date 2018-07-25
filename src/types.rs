@@ -32,34 +32,28 @@ pub enum Atom {
     Boolean(Boolean)
 }
 
-impl Into<Atom> for Symbol {
-    fn into(self) -> Atom {
-        Atom::Symbol(self)
+impl From<Symbol> for Atom {
+    fn from(symbol: Symbol) -> Self {
+        Atom::Symbol(symbol)
     }
 }
 
-impl Into<Atom> for Str {
-    fn into(self) -> Atom {
-        Atom::String(self)
+impl From<Str> for Atom {
+    fn from(s: Str) -> Self {
+        Atom::String(s)
     }
 }
 
-impl Into<Atom> for Fixnum {
-    fn into(self) -> Atom {
-        Atom::Fixnum(self)
+impl From<Fixnum> for Atom {
+    fn from(num: Fixnum) -> Self {
+        Atom::Fixnum(num)
     }
 }
 
-impl Into<Atom> for Boolean {
-    fn into(self) -> Atom {
-        Atom::Boolean(self)
+impl From<Boolean> for Atom {
+    fn from(b: Boolean) -> Self {
+        Atom::Boolean(b)
     }
-}
-
-// so we can point to the heap from the stack
-#[derive(Debug)]
-pub struct ValuePtr {
-    pub obj: Value
 }
 
 #[derive(Debug)]
@@ -75,22 +69,28 @@ pub enum Value {
     Cons(Box<Cons>)
 }
 
-impl Into<Value> for Atom {
-    fn into(self) -> Value {
-        Value::Atom(Box::new(self))
+impl From<Atom> for Value {
+    fn from(atom: Atom) -> Self {
+        Value::Atom(Box::new(atom))
     }
 }
 
-impl Into<Value> for Cons {
-    fn into(self) -> Value {
-        Value::Cons(Box::new(self))
+impl From<Cons> for Value {
+    fn from(cons: Cons) -> Self {
+        Value::Cons(Box::new(cons))
     }
 }
 
-impl Into<ValuePtr> for Value {
-    fn into(self) -> ValuePtr {
+// so we can point to the heap from the stack
+#[derive(Debug)]
+pub struct ValuePtr {
+    pub obj: Value
+}
+
+impl From<Value> for ValuePtr {
+    fn from(value: Value) -> Self {
         ValuePtr {
-            obj: self
+            obj: value
         }
     }
 }
