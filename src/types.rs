@@ -1,3 +1,4 @@
+use util::FromRef;
 use std::mem;
 
 // FIXME this is pretty much all public for now
@@ -56,6 +57,17 @@ impl From<Boolean> for Atom {
     }
 }
 
+impl FromRef<Atom> for String {
+    fn from_ref(atom: &Atom) -> Self {
+        match atom {
+            &Atom::Symbol(ref s) => s.value.clone(),
+            &Atom::String(ref s) => s.value.clone(),
+            &Atom::Fixnum(ref f) => f.value.to_string(),
+            &Atom::Boolean(ref b) => b.value.to_string()
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct Cons {
     pub left: Value,
@@ -81,6 +93,16 @@ impl From<Cons> for Value {
     }
 }
 
+impl FromRef<Value> for String {
+    fn from_ref(value: &Value) -> Self {
+        match value {
+            &Value::Nil => "nil".to_owned(),
+            &Value::Atom(ref boxed_atom) => String::from_ref(&**boxed_atom),
+            &Value::Cons(_) => unreachable!()
+        }
+    }
+}
+
 // so we can point to the heap from the stack
 #[derive(Debug)]
 pub struct ValuePtr {
@@ -91,6 +113,24 @@ impl From<Value> for ValuePtr {
     fn from(value: Value) -> Self {
         ValuePtr {
             obj: value
+        }
+    }
+}
+
+impl From<ValuePtr> for String {
+    fn from(value_ptr: ValuePtr) -> Self {
+        match value_ptr.obj {
+            Value::Cons(_) => {
+                let mut head = &value_ptr;
+                let mut reprs = Vec::new();
+                while let Some(element_ref) = car(&head) {
+                    let repr = String::from_ref(element_ref);
+                    reprs.push(repr);
+                    (*head).obj = *element_ref;
+                }
+                format!("({})", reprs.join(" "))
+            },
+            _ => unimplemented!() //String::from(value_ptr.obj)
         }
     }
 }
@@ -126,5 +166,13 @@ impl ValuePtr {
                 Some(ptr)
             }
         }
+    }
+}
+
+pub fn car(cons_ptr: &ValuePtr) -> Option<&Value> {
+    match cons_ptr.obj {
+        Value::Nil => None, // TODO None or Value::Nil?
+        Value::Atom(_) => panic!(), // TODO should be an error, but not a panic
+        Value::Cons(ref cons) => Some(&cons.left)
     }
 }

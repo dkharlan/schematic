@@ -8,6 +8,7 @@ extern crate pest_derive;
 mod reader;
 mod errors;
 mod types;
+mod util;
 
 use std::io;
 use std::io::{BufRead, Write};
@@ -34,11 +35,10 @@ fn main() {
 
         println!(" DEBUG: raw input = {}", line);
 
-        let value = read(&line);
-
-        match value {
-            Ok(val) => {
-                println!(" ==> {:#?}", val);
+        match read(&line) {
+            Ok(value_ptr) => {
+                let repr = String::from(value_ptr);
+                println!(" ==> {:#?}", repr);
             },
             Err(e) => {
                 println!(" ERROR: {:?}", e);
