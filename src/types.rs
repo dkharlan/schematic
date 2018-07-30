@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 use util::FromRef;
 use errors;
@@ -79,19 +79,19 @@ pub struct Cons {
 #[derive(Debug, Clone)]
 pub enum Value {
     Nil,
-    Atom(Rc<Atom>),
-    Cons(Rc<Cons>)
+    Atom(Arc<Atom>),
+    Cons(Arc<Cons>)
 }
 
 impl From<Atom> for Value {
     fn from(atom: Atom) -> Self {
-        Value::Atom(Rc::new(atom))
+        Value::Atom(Arc::new(atom))
     }
 }
 
 impl From<Cons> for Value {
     fn from(cons: Cons) -> Self {
-        Value::Cons(Rc::new(cons))
+        Value::Cons(Arc::new(cons))
     }
 }
 
@@ -136,7 +136,7 @@ impl ValuePtr {
 
 pub fn cons(list: &ValuePtr, value: Value) -> ValuePtr {
     ValuePtr {
-        obj: Value::Cons(Rc::new(Cons {
+        obj: Value::Cons(Arc::new(Cons {
             left: value,
             right: list.obj.clone()
         }))
