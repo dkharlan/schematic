@@ -1,5 +1,7 @@
+use std::rc::Rc;
+
 use util::FromRef;
-use std::mem;
+use errors;
 
 // FIXME this is pretty much all public for now
 // this will change once I settle on interfaces (both from the Rust and Lisp sides), at
@@ -74,22 +76,22 @@ pub struct Cons {
     pub right: Value
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Value {
     Nil,
-    Atom(Box<Atom>),
-    Cons(Box<Cons>)
+    Atom(Rc<Atom>),
+    Cons(Rc<Cons>)
 }
 
 impl From<Atom> for Value {
     fn from(atom: Atom) -> Self {
-        Value::Atom(Box::new(atom))
+        Value::Atom(Rc::new(atom))
     }
 }
 
 impl From<Cons> for Value {
     fn from(cons: Cons) -> Self {
-        Value::Cons(Box::new(cons))
+        Value::Cons(Rc::new(cons))
     }
 }
 
@@ -97,7 +99,7 @@ impl FromRef<Value> for String {
     fn from_ref(value_ref: &Value) -> Self {
         match value_ref {
             &Value::Nil => "nil".to_owned(),
-            &Value::Atom(ref boxed_atom) => String::from_ref(&**boxed_atom),
+            &Value::Atom(ref atom_rc) => String::from_ref(&**atom_rc),
             &Value::Cons(_) => {
                 let mut reprs = Vec::new();
                 for element in value_ref.iter() {
@@ -111,7 +113,7 @@ impl FromRef<Value> for String {
 }
 
 // so we can point to the heap from the stack
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ValuePtr {
     pub obj: Value
 }
@@ -124,47 +126,55 @@ impl From<Value> for ValuePtr {
     }
 }
 
-// FIXME push and pop aren't part of the "protocol" of Value. they should be moved
 impl ValuePtr {
     pub fn new() -> Self {
         ValuePtr {
             obj: Value::Nil
         }
     }
+}
 
-    // FIXME should this take a ValuePtr?
-    pub fn push(&mut self, value: Value) {
-        let cons = Box::new(Cons {
+pub fn cons(list: &ValuePtr, value: Value) -> ValuePtr {
+    ValuePtr {
+        obj: Value::Cons(Rc::new(Cons {
             left: value,
-            right: mem::replace(&mut self.obj, Value::Nil)
-        });
-        self.obj = Value::Cons(cons);
-    }
-
-    pub fn pop(&mut self) -> Option<ValuePtr> {
-        match mem::replace(&mut self.obj, Value::Nil) {
-            Value::Nil => None,
-            Value::Atom(_) => unimplemented!(),  // TODO what happens here?
-            Value::Cons(boxed_cons) => {
-                let cons = *boxed_cons;
-                self.obj = cons.right;
-
-                let mut ptr = ValuePtr::new();
-                ptr.obj = cons.left;
-
-                Some(ptr)
-            }
-        }
+            right: list.obj.clone()
+        }))
     }
 }
 
+pub fn car(list: &ValuePtr) -> Result<ValuePtr, errors::Error> {
+    match list.obj {
+        Value::Atom(_) => Err(errors::Error::MismatchedTypes),
+        Value::Nil => Ok(ValuePtr {
+            obj: Value::Nil
+        }),
+        Value::Cons(ref cons_rc) => Ok(ValuePtr {
+            obj: cons_rc.left.clone()
+        })
+    }
+}
+
+pub fn cdr(list: &ValuePtr) -> Result<ValuePtr, errors::Error> {
+    match list.obj {
+        Value::Atom(_) => Err(errors::Error::MismatchedTypes),
+        Value::Nil => Ok(ValuePtr {
+            obj: Value::Nil
+        }),
+        Value::Cons(ref cons_rc) => Ok(ValuePtr {
+            obj: cons_rc.right.clone()
+        })
+    }
+}
+
+// TODO remove this and convert calls to car / cdr iteration
 impl<'a> Value {
     pub fn iter(&'a self) -> ConsIter {
         ConsIter {
             next: match self {
                 &Value::Nil => None,
                 &Value::Atom(_) => None, // FIXME should this be an error?
-                &Value::Cons(ref boxed_cons) => Some(&*boxed_cons)
+                &Value::Cons(ref cons_rc) => Some(&*cons_rc)
             }
         }
     }
@@ -183,7 +193,7 @@ impl<'a> Iterator for ConsIter<'a> {
             self.next = match right_cons_ref {
                 &Value::Nil => None,
                 &Value::Atom(_) => None,
-                &Value::Cons(ref boxed_cons) => Some(&boxed_cons)
+                &Value::Cons(ref cons_rc) => Some(&cons_rc)
             };
 
             &cons_ref.left
