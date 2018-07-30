@@ -10,12 +10,15 @@ It's intended for two purposes:
 
 ## Running Schematic
 
+Setting the `DEBUG` environment variable to `true` will print extra information.
+
 ```bash
-$ cargo run
-     (...Cargo output...)
+Debug mode enabled.
 λ (foo bar baz)
  DEBUG: raw input = (foo bar baz)
- ==> ValuePtr {
+ DEBUG
+  ;;; val begins here
+ValuePtr {
     obj: Cons(
         Cons {
             left: Atom(
@@ -51,9 +54,15 @@ $ cargo run
         }
     )
 }
+  ;;; val ends here
+ DEBUG
+
+ ==> (foo bar baz)
 λ 100
  DEBUG: raw input = 100
- ==> ValuePtr {
+ DEBUG
+  ;;; val begins here
+ValuePtr {
     obj: Atom(
         Fixnum(
             Fixnum {
@@ -62,9 +71,15 @@ $ cargo run
         )
     )
 }
+  ;;; val ends here
+ DEBUG
+
+ ==> 100
 λ "Hello!"
  DEBUG: raw input = "Hello!"
- ==> ValuePtr {
+ DEBUG
+  ;;; val begins here
+ValuePtr {
     obj: Atom(
         String(
             Str {
@@ -73,9 +88,15 @@ $ cargo run
         )
     )
 }
+  ;;; val ends here
+ DEBUG
+
+ ==> "Hello!"
 λ +
  DEBUG: raw input = +
- ==> ValuePtr {
+ DEBUG
+  ;;; val begins here
+ValuePtr {
     obj: Atom(
         Symbol(
             Symbol {
@@ -84,9 +105,15 @@ $ cargo run
         )
     )
 }
-λ true 
+  ;;; val ends here
+ DEBUG
+
+ ==> +
+λ true
  DEBUG: raw input = true
- ==> ValuePtr {
+ DEBUG
+  ;;; val begins here
+ValuePtr {
     obj: Atom(
         Boolean(
             Boolean {
@@ -95,7 +122,10 @@ $ cargo run
         )
     )
 }
-λ ^D
+  ;;; val ends here
+ DEBUG
+
+ ==> true
+λ 
 Goodbye.
-$
 ```
