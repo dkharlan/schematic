@@ -94,11 +94,18 @@ impl From<Cons> for Value {
 }
 
 impl FromRef<Value> for String {
-    fn from_ref(value: &Value) -> Self {
-        match value {
+    fn from_ref(value_ref: &Value) -> Self {
+        match value_ref {
             &Value::Nil => "nil".to_owned(),
             &Value::Atom(ref boxed_atom) => String::from_ref(&**boxed_atom),
-            &Value::Cons(_) => unreachable!()
+            &Value::Cons(_) => {
+                let mut reprs = Vec::new();
+                for element in value_ref.iter() {
+                    let repr = String::from_ref(element);
+                    reprs.push(repr);
+                }
+                format!("({})", reprs.join(" "))
+            }
         }
     }
 }
@@ -113,24 +120,6 @@ impl From<Value> for ValuePtr {
     fn from(value: Value) -> Self {
         ValuePtr {
             obj: value
-        }
-    }
-}
-
-impl From<ValuePtr> for String {
-    fn from(value_ptr: ValuePtr) -> Self {
-        match value_ptr.obj {
-            Value::Cons(_) => {
-                let mut head = &value_ptr;
-                let mut reprs = Vec::new();
-                while let Some(element_ref) = car(&head) {
-                    let repr = String::from_ref(element_ref);
-                    reprs.push(repr);
-                    (*head).obj = *element_ref;
-                }
-                format!("({})", reprs.join(" "))
-            },
-            _ => unimplemented!() //String::from(value_ptr.obj)
         }
     }
 }
@@ -169,10 +158,35 @@ impl ValuePtr {
     }
 }
 
-pub fn car(cons_ptr: &ValuePtr) -> Option<&Value> {
-    match cons_ptr.obj {
-        Value::Nil => None, // TODO None or Value::Nil?
-        Value::Atom(_) => panic!(), // TODO should be an error, but not a panic
-        Value::Cons(ref cons) => Some(&cons.left)
+impl<'a> Value {
+    pub fn iter(&'a self) -> ConsIter {
+        ConsIter {
+            next: match self {
+                &Value::Nil => None,
+                &Value::Atom(_) => None, // FIXME should this be an error?
+                &Value::Cons(ref boxed_cons) => Some(&*boxed_cons)
+            }
+        }
+    }
+}
+
+pub struct ConsIter<'a> {
+    next: Option<&'a Cons>
+}
+
+impl<'a> Iterator for ConsIter<'a> {
+    type Item = &'a Value;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next.map(|cons_ref| {
+            let right_cons_ref = &cons_ref.right;
+            self.next = match right_cons_ref {
+                &Value::Nil => None,
+                &Value::Atom(_) => None,
+                &Value::Cons(ref boxed_cons) => Some(&boxed_cons)
+            };
+
+            &cons_ref.left
+        })
     }
 }

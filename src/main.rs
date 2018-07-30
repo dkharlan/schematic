@@ -13,6 +13,7 @@ mod util;
 use std::io;
 use std::io::{BufRead, Write};
 
+use util::FromRef;
 use reader::read;
 
 fn main() {
@@ -37,8 +38,15 @@ fn main() {
 
         match read(&line) {
             Ok(value_ptr) => {
-                let repr = String::from(value_ptr);
-                println!(" ==> {:#?}", repr);
+
+                let value_ref = &value_ptr.obj;
+
+                // TODO remove me
+                println!(" DEBUG\n{:#?}\n DEBUG\n", value_ptr);
+                // TODO remove me
+
+                let repr = String::from_ref(value_ref);
+                println!(" ==> {}", repr);
             },
             Err(e) => {
                 println!(" ERROR: {:?}", e);
