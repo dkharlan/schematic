@@ -1,3 +1,4 @@
+use util::FromRef;
 use std::mem;
 
 // FIXME this is pretty much all public for now
@@ -56,6 +57,17 @@ impl From<Boolean> for Atom {
     }
 }
 
+impl FromRef<Atom> for String {
+    fn from_ref(atom: &Atom) -> Self {
+        match atom {
+            &Atom::Symbol(ref s) => s.value.clone(),
+            &Atom::String(ref s) => s.value.clone(),
+            &Atom::Fixnum(ref f) => f.value.to_string(),
+            &Atom::Boolean(ref b) => b.value.to_string()
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct Cons {
     pub left: Value,
@@ -78,6 +90,23 @@ impl From<Atom> for Value {
 impl From<Cons> for Value {
     fn from(cons: Cons) -> Self {
         Value::Cons(Box::new(cons))
+    }
+}
+
+impl FromRef<Value> for String {
+    fn from_ref(value_ref: &Value) -> Self {
+        match value_ref {
+            &Value::Nil => "nil".to_owned(),
+            &Value::Atom(ref boxed_atom) => String::from_ref(&**boxed_atom),
+            &Value::Cons(_) => {
+                let mut reprs = Vec::new();
+                for element in value_ref.iter() {
+                    let repr = String::from_ref(element);
+                    reprs.push(repr);
+                }
+                format!("({})", reprs.join(" "))
+            }
+        }
     }
 }
 
@@ -126,5 +155,38 @@ impl ValuePtr {
                 Some(ptr)
             }
         }
+    }
+}
+
+impl<'a> Value {
+    pub fn iter(&'a self) -> ConsIter {
+        ConsIter {
+            next: match self {
+                &Value::Nil => None,
+                &Value::Atom(_) => None, // FIXME should this be an error?
+                &Value::Cons(ref boxed_cons) => Some(&*boxed_cons)
+            }
+        }
+    }
+}
+
+pub struct ConsIter<'a> {
+    next: Option<&'a Cons>
+}
+
+impl<'a> Iterator for ConsIter<'a> {
+    type Item = &'a Value;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next.map(|cons_ref| {
+            let right_cons_ref = &cons_ref.right;
+            self.next = match right_cons_ref {
+                &Value::Nil => None,
+                &Value::Atom(_) => None,
+                &Value::Cons(ref boxed_cons) => Some(&boxed_cons)
+            };
+
+            &cons_ref.left
+        })
     }
 }
