@@ -12,11 +12,25 @@ mod util;
 
 use std::io;
 use std::io::{BufRead, Write};
+use std::env;
 
 use util::FromRef;
 use reader::read;
 
 fn main() {
+
+    let debug_mode = match env::var("DEBUG") {
+        Ok(val) => match val.to_lowercase().as_ref() {
+            "true" => true,
+            "false" => false,
+            _ => false
+        },
+        Err(_) => false
+    };
+
+    if debug_mode {
+        println!("Debug mode enabled.");
+    }
 
     let input = io::stdin();
     let mut lines = input.lock().lines();
@@ -34,19 +48,19 @@ fn main() {
             None => break // EOF
         }
 
-        println!(" DEBUG: raw input = {}", line);
+        if debug_mode {
+            println!(" DEBUG: raw input = {}", line);
+        }
 
         match read(&line) {
             Ok(value_ptr) => {
-
                 let value_ref = &value_ptr.obj;
 
-                // TODO remove me
-                println!(" DEBUG\n{:#?}\n DEBUG\n", value_ptr);
-                // TODO remove me
+                if debug_mode {
+                    println!(" DEBUG\n  ;;; val begins here\n{:#?}\n  ;;; val ends here\n DEBUG\n", value_ptr);
+                }
 
-                let repr = String::from_ref(value_ref);
-                println!(" ==> {}", repr);
+                println!(" ==> {}", String::from_ref(value_ref));
             },
             Err(e) => {
                 println!(" ERROR: {:?}", e);
