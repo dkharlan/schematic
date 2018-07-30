@@ -4,7 +4,7 @@ use pest::Parser;
 use pest::iterators::Pair;
 
 use errors;
-use types::{Value, ValuePtr, Atom, Symbol, Fixnum, Str, Boolean};
+use types::{Value, ValuePtr, Atom, Symbol, Fixnum, Str, Boolean, cons, car, cdr};
 
 #[derive(Parser)]
 #[grammar = "example.pest"]
@@ -100,7 +100,7 @@ impl<'i> TryFrom<Pair<'i, Rule>> for ValuePtr {
                             break
                         }
                     };
-                    reverse_list.push(new_value_ptr.obj);
+                    reverse_list = cons(&reverse_list, new_value_ptr.obj);
                 }
 
                 if let Some(error) = error {
@@ -108,10 +108,45 @@ impl<'i> TryFrom<Pair<'i, Rule>> for ValuePtr {
                 }
                 else {
                     let mut list = ValuePtr::new();
-                    while let Some(element) = reverse_list.pop() {
-                        list.push(element.obj);
+                    let mut reverse_head = reverse_list.clone();
+                    let mut error = None;
+
+                    loop {
+                        match car(&reverse_head) {
+                            Err(e) => {
+                                error = Some(e);
+                                break;
+                            },
+                            Ok(element) => {
+                                match cdr(&reverse_head) {
+                                    Err(e) => {
+                                        error = Some(e);
+                                        break;
+                                    },
+                                    Ok(rest) => {
+                                        list = cons(&list, element.obj);
+                                        match rest.obj {
+                                            Value::Nil => break,
+                                            Value::Atom(_) => {
+                                                error = Some(errors::Error::MismatchedTypes);
+                                                break;
+                                            }
+                                            Value::Cons(_) => {
+                                                reverse_head = rest;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        };
                     }
-                    Ok(list)
+
+                    if let Some(error) = error {
+                        Err(error)
+                    }
+                    else {
+                        Ok(list)
+                    }
                 }
             },
             _ => Err(errors::Error::UnknownToken)
