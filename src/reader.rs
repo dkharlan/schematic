@@ -4,7 +4,8 @@ use pest::Parser;
 use pest::iterators::Pair;
 
 use errors;
-use types::{Value, ValuePtr, Atom, Symbol, Fixnum, Str, Boolean, cons, car, cdr};
+use types::{Value, ValuePtr, Atom, Symbol, Fixnum, Str, Boolean};
+use lists::{cons, car, cdr};
 
 #[derive(Parser)]
 #[grammar = "example.pest"]
@@ -92,6 +93,7 @@ impl<'i> TryFrom<Pair<'i, Rule>> for ValuePtr {
                 let mut reverse_list = ValuePtr::new();
                 let mut error = None;
 
+                // TODO reduce?
                 for pair in pair.into_inner() {
                     let new_value_ptr = match ValuePtr::try_from(pair) {
                         Ok(value) => value,
@@ -107,6 +109,7 @@ impl<'i> TryFrom<Pair<'i, Rule>> for ValuePtr {
                     Err(error)
                 }
                 else {
+                    // TODO pull this out to a function
                     let mut list = ValuePtr::new();
                     let mut reverse_head = reverse_list.clone();
                     let mut error = None;

@@ -1,0 +1,71 @@
+use std::sync::Arc;
+
+use types::{Value, ValuePtr, Cons};
+use errors;
+
+pub fn cons(list: &ValuePtr, value: Value) -> ValuePtr {
+    ValuePtr {
+        obj: Value::Cons(Arc::new(Cons {
+            left: value,
+            right: list.obj.clone()
+        }))
+    }
+}
+
+pub fn car(list: &ValuePtr) -> Result<ValuePtr, errors::Error> {
+    match list.obj {
+        Value::Atom(_) => Err(errors::Error::MismatchedTypes),
+        Value::Nil => Ok(ValuePtr {
+            obj: Value::Nil
+        }),
+        Value::Cons(ref cons_rc) => Ok(ValuePtr {
+            obj: cons_rc.left.clone()
+        })
+    }
+}
+
+pub fn cdr(list: &ValuePtr) -> Result<ValuePtr, errors::Error> {
+    match list.obj {
+        Value::Atom(_) => Err(errors::Error::MismatchedTypes),
+        Value::Nil => Ok(ValuePtr {
+            obj: Value::Nil
+        }),
+        Value::Cons(ref cons_rc) => Ok(ValuePtr {
+            obj: cons_rc.right.clone()
+        })
+    }
+}
+
+// TODO remove this and convert calls to car / cdr iteration
+impl<'a> Value {
+    pub fn iter(&'a self) -> ConsIter {
+        ConsIter {
+            next: match self {
+                &Value::Nil => None,
+                &Value::Atom(_) => None, // FIXME should this be an error?
+                &Value::Cons(ref cons_rc) => Some(&*cons_rc)
+            }
+        }
+    }
+}
+
+pub struct ConsIter<'a> {
+    next: Option<&'a Cons>
+}
+
+impl<'a> Iterator for ConsIter<'a> {
+    type Item = &'a Value;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next.map(|cons_ref| {
+            let right_cons_ref = &cons_ref.right;
+            self.next = match right_cons_ref {
+                &Value::Nil => None,
+                &Value::Atom(_) => None,
+                &Value::Cons(ref cons_rc) => Some(&cons_rc)
+            };
+
+            &cons_ref.left
+        })
+    }
+}
