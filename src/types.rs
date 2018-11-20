@@ -69,6 +69,7 @@ impl FromRef<Atom> for String {
     }
 }
 
+// TODO should left and right be boxed?
 #[derive(Debug)]
 pub struct Cons {
     pub left: Value,
