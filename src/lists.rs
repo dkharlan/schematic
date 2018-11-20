@@ -36,6 +36,40 @@ pub fn cdr(list: &ValuePtr) -> Result<ValuePtr, errors::Error> {
     }
 }
 
+pub fn reverse(list: &ValuePtr) -> Result<ValuePtr, errors::Error> {
+    let mut head = list.clone();     // TODO suspect, look into why i'm cloning this
+    let mut reversed_list = ValuePtr::new();
+
+    loop {
+        match car(&head) {
+            Err(e) => { // TODO here
+                return Err(e);
+            }
+            Ok(element) => {
+                match cdr(&head) {
+                    Err(e) => {
+                        return Err(e); // TODO here
+                    }
+                    Ok(rest) => {
+                        reversed_list = cons(&reversed_list, element.obj);
+                        match rest.obj {
+                            Value::Nil => break,
+                            Value::Atom(_) => {
+                                return Err(errors::Error::MismatchedTypes); // TODO here
+                            }
+                            Value::Cons(_) => {
+                                head = rest;
+                            }
+                        }
+                    }
+                }
+            }
+        };
+    }
+
+    Ok(reversed_list)
+}
+
 // TODO remove this and convert calls to car / cdr iteration
 impl<'a> Value {
     pub fn iter(&'a self) -> ConsIter {
