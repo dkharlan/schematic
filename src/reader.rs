@@ -89,6 +89,8 @@ impl<'i> TryFrom<Pair<'i, Rule>> for ValuePtr {
                 Ok(string_value.into())
             },
             Rule::list => {
+                // TODO - Make this more explicit that we're making a Result<ValuePtr::Cons> (so to speak) so that
+                // reverse can be rewritten in terms of cons
                 pair.into_inner()
                     .fold(Ok(ValuePtr::new()), |maybe_head, pair| {
                         ValuePtr::try_from(pair)
