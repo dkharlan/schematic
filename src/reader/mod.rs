@@ -1,13 +1,16 @@
+mod lists;
+
 use std::convert::TryFrom;
 
 use pest::Parser;
 use pest::iterators::Pair;
 
 use errors;
-use types::{Value, ValuePtr, Atom, Symbol, Fixnum, Str, Boolean, cons, car, cdr};
+use types::{Value, ValuePtr, Atom, Symbol, Fixnum, Str, Boolean};
+use self::lists::{cons, reverse};
 
 #[derive(Parser)]
-#[grammar = "example.pest"]
+#[grammar = "schematic.pest"]
 struct ExampleParser;
 
 impl From<String> for Symbol {
@@ -88,66 +91,16 @@ impl<'i> TryFrom<Pair<'i, Rule>> for ValuePtr {
                 Ok(string_value.into())
             },
             Rule::list => {
-
-                let mut reverse_list = ValuePtr::new();
-                let mut error = None;
-
-                for pair in pair.into_inner() {
-                    let new_value_ptr = match ValuePtr::try_from(pair) {
-                        Ok(value) => value,
-                        Err(e) => {
-                            error = Some(e);
-                            break
-                        }
-                    };
-                    reverse_list = cons(&reverse_list, new_value_ptr.obj);
-                }
-
-                if let Some(error) = error {
-                    Err(error)
-                }
-                else {
-                    let mut list = ValuePtr::new();
-                    let mut reverse_head = reverse_list.clone();
-                    let mut error = None;
-
-                    loop {
-                        match car(&reverse_head) {
-                            Err(e) => {
-                                error = Some(e);
-                                break;
-                            },
-                            Ok(element) => {
-                                match cdr(&reverse_head) {
-                                    Err(e) => {
-                                        error = Some(e);
-                                        break;
-                                    },
-                                    Ok(rest) => {
-                                        list = cons(&list, element.obj);
-                                        match rest.obj {
-                                            Value::Nil => break,
-                                            Value::Atom(_) => {
-                                                error = Some(errors::Error::MismatchedTypes);
-                                                break;
-                                            }
-                                            Value::Cons(_) => {
-                                                reverse_head = rest;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        };
-                    }
-
-                    if let Some(error) = error {
-                        Err(error)
-                    }
-                    else {
-                        Ok(list)
-                    }
-                }
+                // TODO - Make this more explicit that we're making a Result<ValuePtr::Cons> (so to speak) so that
+                // reverse can be rewritten in terms of cons
+                pair.into_inner()
+                    .fold(Ok(ValuePtr::new()), |maybe_head, pair| {
+                        ValuePtr::try_from(pair)
+                            .and_then(|v| {
+                                maybe_head.map(|head| cons(&head, v.obj))
+                            })
+                    })
+                    .and_then(|v| reverse(&v))
             },
             _ => Err(errors::Error::UnknownToken)
         }
