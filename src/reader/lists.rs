@@ -36,9 +36,6 @@ pub fn cdr(list: &ValuePtr) -> Result<ValuePtr, errors::Error> {
     }
 }
 
-// TODO Look into refactoring this.  This is trickier than it appears, since it raises some semantic issues:
-//    -] I can't use cool tricks like the reader's fold-and_then-map idiom unless I implement Iterator for
-//       ValuePtr.
 pub fn reverse(list: &ValuePtr) -> Result<ValuePtr, errors::Error> {
     let mut head = list.clone();     // TODO suspect, look into why i'm cloning this
     let mut reversed_list = ValuePtr::new();
@@ -73,7 +70,6 @@ pub fn reverse(list: &ValuePtr) -> Result<ValuePtr, errors::Error> {
     Ok(reversed_list)
 }
 
-// TODO remove this and convert calls to car / cdr iteration
 impl<'a> Value {
     pub fn iter(&'a self) -> ConsIter {
         ConsIter {

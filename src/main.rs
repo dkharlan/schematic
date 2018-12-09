@@ -8,7 +8,6 @@ extern crate pest_derive;
 mod reader;
 mod errors;
 mod types;
-mod lists;
 mod util;
 
 use std::io;

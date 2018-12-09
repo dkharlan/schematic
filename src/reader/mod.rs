@@ -1,3 +1,5 @@
+mod lists;
+
 use std::convert::TryFrom;
 
 use pest::Parser;
@@ -5,10 +7,10 @@ use pest::iterators::Pair;
 
 use errors;
 use types::{Value, ValuePtr, Atom, Symbol, Fixnum, Str, Boolean};
-use lists::{cons, reverse};
+use self::lists::{cons, reverse};
 
 #[derive(Parser)]
-#[grammar = "example.pest"]
+#[grammar = "schematic.pest"]
 struct ExampleParser;
 
 impl From<String> for Symbol {
