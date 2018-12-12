@@ -69,36 +69,3 @@ pub fn reverse(list: &ValuePtr) -> Result<ValuePtr, errors::Error> {
 
     Ok(reversed_list)
 }
-
-impl<'a> Value {
-    pub fn iter(&'a self) -> ConsIter {
-        ConsIter {
-            next: match self {
-                &Value::Nil => None,
-                &Value::Atom(_) => None, // FIXME should this be an error?
-                &Value::Cons(ref cons_rc) => Some(&*cons_rc)
-            }
-        }
-    }
-}
-
-pub struct ConsIter<'a> {
-    next: Option<&'a Cons>
-}
-
-impl<'a> Iterator for ConsIter<'a> {
-    type Item = &'a Value;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.next.map(|cons_ref| {
-            let right_cons_ref = &cons_ref.right;
-            self.next = match right_cons_ref {
-                &Value::Nil => None,
-                &Value::Atom(_) => None,
-                &Value::Cons(ref cons_rc) => Some(&cons_rc)
-            };
-
-            &cons_ref.left
-        })
-    }
-}

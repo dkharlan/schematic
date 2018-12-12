@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use errors::Error;
 use util::FromRef;
 
 // FIXME this is pretty much all public for now
@@ -9,6 +10,14 @@ use util::FromRef;
 #[derive(Debug)]
 pub struct Symbol {
     pub value: String
+}
+
+impl Symbol {
+    pub fn new(value: String) -> Self {
+        Symbol {
+            value
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -21,17 +30,28 @@ pub struct Fixnum {
     pub value: i64
 }
 
+impl Fixnum {
+    pub fn new(value: i64) -> Self {
+        Fixnum {
+            value
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct Boolean {
     pub value: bool
 }
+
+type Callable = fn(ConsIter) -> Result<ValuePtr, Error>;
 
 #[derive(Debug)]
 pub enum Atom {
     Symbol(Symbol),
     String(Str),
     Fixnum(Fixnum),
-    Boolean(Boolean)
+    Boolean(Boolean),
+    Func(Callable)
 }
 
 impl From<Symbol> for Atom {
@@ -55,6 +75,12 @@ impl From<Fixnum> for Atom {
 impl From<Boolean> for Atom {
     fn from(b: Boolean) -> Self {
         Atom::Boolean(b)
+    }
+}
+
+impl From<Callable> for Atom {
+    fn from(c: Callable) -> Self {
+        Atom::Callable(c)
     }
 }
 
@@ -131,5 +157,38 @@ impl ValuePtr {
         ValuePtr {
             obj: Value::Nil
         }
+    }
+}
+
+impl<'a> Value {
+    pub fn iter(&'a self) -> ConsIter {
+        ConsIter {
+            next: match self {
+                &Value::Nil => None,
+                &Value::Atom(_) => None, // FIXME should this be an error?
+                &Value::Cons(ref cons_rc) => Some(&*cons_rc)
+            }
+        }
+    }
+}
+
+pub struct ConsIter<'a> {
+    next: Option<&'a Cons>
+}
+
+impl<'a> Iterator for ConsIter<'a> {
+    type Item = &'a Value;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next.map(|cons_ref| {
+            let right_cons_ref = &cons_ref.right;
+            self.next = match right_cons_ref {
+                &Value::Nil => None,
+                &Value::Atom(_) => None,
+                &Value::Cons(ref cons_rc) => Some(&cons_rc)
+            };
+
+            &cons_ref.left
+        })
     }
 }

@@ -1,4 +1,4 @@
-mod lists;
+pub mod lists;
 
 use std::convert::TryFrom;
 
